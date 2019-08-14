@@ -28,14 +28,19 @@ public class SongPlayer extends AppCompatActivity {
     private TextView songLabelName;
     private SeekBar songSeekbar;
     private Button btnPrev, btnNext, btnPause;
+
     int currentPosition1;
 
-    private MediaPlayer myMediaPlayer;
+    private static MediaPlayer myMediaPlayer;
+    private String songName;
     int position;
     ArrayList<File> mySongs;
     Thread updateSeekBar;
     private String sName;
 
+    static{
+        myMediaPlayer = new MediaPlayer();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,18 +64,16 @@ public class SongPlayer extends AppCompatActivity {
             public void run() {
                 int totalDuration=0;
 
-                        totalDuration = myMediaPlayer.getDuration();
-
-
+                totalDuration = myMediaPlayer.getDuration();
 
                 int currentPosition = 0;
 
 
                 while(currentPosition < totalDuration){
                     try{
-                       sleep(100);
-                       currentPosition = myMediaPlayer.getCurrentPosition();
-                       songSeekbar.setProgress(currentPosition);
+                        sleep(1000);
+                        currentPosition = myMediaPlayer.getCurrentPosition();
+                        songSeekbar.setProgress(currentPosition);
                     }catch(InterruptedException e){
                         e.printStackTrace();
                     }
@@ -79,29 +82,41 @@ public class SongPlayer extends AppCompatActivity {
         };
 
         if(myMediaPlayer != null){
-            myMediaPlayer.stop();
-            myMediaPlayer.release();
-            myMediaPlayer = null;
+            myMediaPlayer.reset();
         }
 
         Intent i = getIntent();
         Bundle bundle = i.getExtras();
+        position = bundle.getInt("position", 0);
+
         mySongs = (ArrayList)bundle.getParcelableArrayList("songs");
         sName = mySongs.get(position).toString();
 
+        songName = mySongs.get(position).toString();
+
         //TODO: Could swap it with bundle.getParcelable("song");?
-        String songName = i.getStringExtra("songName");
+        //String songName = i.getStringExtra("songName");
+
+        String[] token = songName.split("/");
+        songName = token[4];
+//        System.out.println("**********************************************SONG NAME: " +
+//                token.toString() + "**********************************************\n");
 
         songLabelName.setText(songName);
         //TODO: What happens if i unselect it?
         songLabelName.setSelected(true);
 
-        position = bundle.getInt("position", 0);
+
 
         Uri u = Uri.parse(mySongs.get(position).toString());
 
         //TODO: can i put SongPlayer.this, or getContent
-        myMediaPlayer = MediaPlayer.create(getApplicationContext(), u);
+        try {
+            myMediaPlayer.setDataSource(getApplicationContext(), u);
+            myMediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
@@ -109,6 +124,37 @@ public class SongPlayer extends AppCompatActivity {
                 myMediaPlayer.start();
             }
         });
+        /*
+        if(myMediaPlayer.getCurrentPosition() == myMediaPlayer.getDuration()){
+            myMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    myMediaPlayer.stop();
+                    myMediaPlayer.reset();
+
+                    position = (position+1)%mySongs.size();
+                    Uri u = Uri.parse((mySongs.get(position)).toString());
+
+                    setLabelSongName();
+
+                    try {
+                        myMediaPlayer.setDataSource(getApplicationContext(),u);
+                        myMediaPlayer.prepare();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                        @Override
+                        public void onPrepared(MediaPlayer mediaPlayer) {
+
+                            myMediaPlayer.start();
+                        }
+                    });
+                }
+            });
+        }*/
+
         songSeekbar.setMax(myMediaPlayer.getDuration());
 
         updateSeekBar.start();
@@ -158,7 +204,9 @@ public class SongPlayer extends AppCompatActivity {
 
                 position = (position+1)%mySongs.size();
                 Uri u = Uri.parse((mySongs.get(position)).toString());
-                songLabelName.setText(mySongs.get(position).toString());
+
+                songName = mySongs.get(position).getName();
+                songLabelName.setText(songName);
 
                 try {
                     myMediaPlayer.setDataSource(getApplicationContext(),u);
@@ -167,20 +215,16 @@ public class SongPlayer extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                System.out.println("**************************************" +
-                                   myMediaPlayer + "***********************************");
-
-              //  updateSeekBar.start();
                 myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
                     public void onPrepared(MediaPlayer mediaPlayer) {
-
                         myMediaPlayer.start();
                     }
                 });
 
             }
         });
+
 
         btnPrev.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,7 +234,9 @@ public class SongPlayer extends AppCompatActivity {
 
                 position = (position > 0?(position-1):mySongs.size()-1);
                 Uri u = Uri.parse(mySongs.get(position).toString());
-                songLabelName.setText(mySongs.get(position).toString());
+
+                songName = mySongs.get(position).getName();
+                songLabelName.setText(songName);
 
                 try {
                     myMediaPlayer.setDataSource(getApplicationContext(),u);
@@ -199,10 +245,6 @@ public class SongPlayer extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                System.out.println("**************************************" +
-                        myMediaPlayer + "***********************************");
-
-            //    updateSeekBar.start();
                 myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
                     public void onPrepared(MediaPlayer mediaPlayer) {
@@ -211,17 +253,16 @@ public class SongPlayer extends AppCompatActivity {
                 });
             }
         });
-
-
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
         if (item.getItemId() == android.R.id.home) {
-             onBackPressed();
+            onBackPressed();
         }
-
         return super.onOptionsItemSelected(item);
     }
+
+
 }

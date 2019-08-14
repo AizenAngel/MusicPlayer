@@ -4,12 +4,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.content.Intent;
+import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karumi.dexter.Dexter;
@@ -25,6 +28,13 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private ListView songList;
+    public static int selectedSong=-1;
+
+    private static View previousSong;
+
+    static{
+        previousSong = null;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,20 +89,38 @@ public class MainActivity extends AppCompatActivity {
 
     void display(){
         final ArrayList<File> songNames = getSongs(Environment.getExternalStorageDirectory());
-        ArrayAdapter<File> arrayAdapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, songNames);
-        songList.setAdapter(arrayAdapter);
+        final ArrayList<String> songShortNames = new ArrayList<>();
+
+        for(File f: songNames){
+            String[]token = f.getName().split("/");
+            String sName = token[0];
+            songShortNames.add(sName);
+        }
+
+        SongAdapter songAdapter = new SongAdapter(this, songNames);
+        songList.setAdapter(songAdapter);
 
         songList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-        String songName = songList.getItemAtPosition(i).toString();
+//            System.out.println("******************************************\n"+
+//                    previousSong+"\n"+"***************************************\n");
 
-                startActivity(new Intent(getApplicationContext(), SongPlayer.class)
+            if(previousSong!=null){
+               previousSong.setBackgroundColor(Color.WHITE);
+               previousSong.setBackgroundColor(Color.WHITE);
+            }
+
+            selectedSong = i;
+            view.setBackgroundColor(Color.RED);
+
+            Toast.makeText(getApplicationContext(), songShortNames.get(i), Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(getApplicationContext(), SongPlayer.class)
                 .putExtra("songs", songNames)
-                .putExtra("songName", songName)
                 .putExtra("position", i));
+
+            previousSong = view;
             }
         });
 
