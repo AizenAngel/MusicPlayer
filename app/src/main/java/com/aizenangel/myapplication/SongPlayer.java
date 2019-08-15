@@ -1,13 +1,12 @@
 package com.aizenangel.myapplication;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,7 +15,6 @@ import androidx.appcompat.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -29,14 +27,11 @@ public class SongPlayer extends AppCompatActivity {
     private SeekBar songSeekbar;
     private Button btnPrev, btnNext, btnPause;
 
-    int currentPosition1;
-
     private static MediaPlayer myMediaPlayer;
     private String songName;
-    int position;
-    ArrayList<File> mySongs;
-    Thread updateSeekBar;
-    private String sName;
+    private int position;
+    private ArrayList<File> mySongs;
+    private Thread updateSeekBar;
 
     static{
         myMediaPlayer = new MediaPlayer();
@@ -62,7 +57,7 @@ public class SongPlayer extends AppCompatActivity {
         updateSeekBar = new Thread(){
             @Override
             public void run() {
-                int totalDuration=0;
+                int totalDuration;
 
                 totalDuration = myMediaPlayer.getDuration();
 
@@ -87,10 +82,13 @@ public class SongPlayer extends AppCompatActivity {
 
         Intent i = getIntent();
         Bundle bundle = i.getExtras();
-        position = bundle.getInt("position", 0);
+        try{
+            position = bundle.getInt("position", 0);
+        }catch(NullPointerException e){
+            position = 0;
+        }
 
         mySongs = (ArrayList)bundle.getParcelableArrayList("songs");
-        sName = mySongs.get(position).toString();
 
         songName = mySongs.get(position).toString();
 
@@ -202,6 +200,8 @@ public class SongPlayer extends AppCompatActivity {
                 myMediaPlayer.stop();
                 myMediaPlayer.reset();
 
+                MainActivity.previousSong.setBackgroundColor(Color.WHITE);
+
                 position = (position+1)%mySongs.size();
                 Uri u = Uri.parse((mySongs.get(position)).toString());
 
@@ -221,7 +221,9 @@ public class SongPlayer extends AppCompatActivity {
                         myMediaPlayer.start();
                     }
                 });
-
+                MainActivity.selectedSong = position;
+                MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
+                MainActivity.previousSong = MainActivity.getViewByPosition(position);
             }
         });
 
@@ -231,6 +233,8 @@ public class SongPlayer extends AppCompatActivity {
             public void onClick(View view) {
                 myMediaPlayer.stop();
                 myMediaPlayer.reset();
+
+                MainActivity.previousSong.setBackgroundColor(Color.WHITE);
 
                 position = (position > 0?(position-1):mySongs.size()-1);
                 Uri u = Uri.parse(mySongs.get(position).toString());
@@ -251,6 +255,10 @@ public class SongPlayer extends AppCompatActivity {
                         myMediaPlayer.start();
                     }
                 });
+
+                MainActivity.selectedSong = position;
+                MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
+                MainActivity.previousSong = MainActivity.getViewByPosition(position);
             }
         });
     }
