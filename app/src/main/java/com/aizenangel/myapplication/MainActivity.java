@@ -5,14 +5,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.Manifest;
 import android.content.Intent;
 import android.graphics.Color;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karumi.dexter.Dexter;
@@ -23,14 +20,13 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    private ListView songList;
+    public static ListView songList;
     public static int selectedSong=-1;
 
-    private static View previousSong;
+    public static View previousSong;
 
     static{
         previousSong = null;
@@ -71,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
     public ArrayList<File> getSongs(File file){
         ArrayList<File> arrayList = new ArrayList<>();
-
+        //TODO: What if no song was found?
         File[] allFiles = file.listFiles();
 
         for(File singleFile: allFiles){
@@ -104,11 +100,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-//            System.out.println("******************************************\n"+
-//                    previousSong+"\n"+"***************************************\n");
-
             if(previousSong!=null){
-               previousSong.setBackgroundColor(Color.WHITE);
                previousSong.setBackgroundColor(Color.WHITE);
             }
 
@@ -125,5 +117,26 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+    public static View getViewByPosition(int pos) {
+        final int firstListItemPosition = songList.getFirstVisiblePosition();
+        final int lastListItemPosition = firstListItemPosition + songList.getChildCount() - 1;
+
+        if (pos < firstListItemPosition || pos > lastListItemPosition ) {
+            return songList.getAdapter().getView(pos, null, songList);
+        } else {
+            final int childIndex = pos - firstListItemPosition;
+            return songList.getChildAt(childIndex);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(songList != null){
+            songList = null;
+        }
+    }
 }
+
 
