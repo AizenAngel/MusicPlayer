@@ -297,9 +297,10 @@ import android.widget.TextView;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class SongPlayer extends AppCompatActivity {
-    private TextView songLabelName;
+    private TextView songLabelName, timePassed, totalTime;
     private SeekBar songSeekbar;
     private Button btnPrev, btnNext, btnPause;
 
@@ -308,6 +309,9 @@ public class SongPlayer extends AppCompatActivity {
     private int position;
     private ArrayList<File> mySongs;
     private Thread updateSeekBar;
+    public int currentPosition=0;
+
+    private final int SLEEP_TIME = 500;
 
     static{
         myMediaPlayer = new MediaPlayer();
@@ -325,6 +329,8 @@ public class SongPlayer extends AppCompatActivity {
         btnPrev = findViewById(R.id.btn_pre);
         btnNext = findViewById(R.id.btn_next);
         btnPause = findViewById(R.id.btn_pause);
+        timePassed = findViewById(R.id.SeekBarMinutes);
+        totalTime = findViewById(R.id.MediaPlayerDuration);
 
         getSupportActionBar().setTitle("Now Playing: ");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -333,18 +339,29 @@ public class SongPlayer extends AppCompatActivity {
         updateSeekBar = new Thread(){
             @Override
             public void run() {
-                int totalDuration;
+                final int totalDuration;
 
                 totalDuration = myMediaPlayer.getDuration();
 
-                int currentPosition = 0;
+                currentPosition = 0;
 
 
                 while(currentPosition < totalDuration){
                     try{
-                        sleep(1000);
+                        sleep(SLEEP_TIME);
                         currentPosition = myMediaPlayer.getCurrentPosition();
                         songSeekbar.setProgress(currentPosition);
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setSongProgress();
+                            }
+
+                        });
+
+//                        System.out.println("SeekBar current position: "+currentPosition/1000);
+//                        System.out.println("MediaPlayer total duration: "+totalDuration/1000);
                     }catch(InterruptedException e){
                         e.printStackTrace();
                     }
@@ -392,43 +409,20 @@ public class SongPlayer extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mediaPlayer) {
-                myMediaPlayer.start();
-            }
-        });
+        myMediaPlayer.start();
+        setDuration();
 
 
-/*
-        myMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                   myMediaPlayer.stop();
-                   myMediaPlayer.reset();
-
-                   position = (position+1)%mySongs.size();
-                   Uri u = Uri.parse((mySongs.get(position)).toString());
+//        myMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+//            @Override
+//            public void onCompletion(MediaPlayer mediaPlayer) {
+//                    setSongProgress();
+//                    System.out.println(currentPosition/1000);
+//            }
+//        });
 
 
-                   try {
-                       myMediaPlayer.setDataSource(getApplicationContext(),u);
-                       myMediaPlayer.prepare();
-                   } catch (IOException e) {
-                       e.printStackTrace();
-                   }
 
-                   myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                       @Override
-                       public void onPrepared(MediaPlayer mediaPlayer) {
-
-                           myMediaPlayer.start();
-                       }
-                   });
-            }
-        });
-*/
-        songSeekbar.setMax(myMediaPlayer.getDuration());
 
         updateSeekBar.start();
 //        songSeekbar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
@@ -488,14 +482,21 @@ public class SongPlayer extends AppCompatActivity {
 
                         totalDuration = myMediaPlayer.getDuration();
 
-                        int currentPosition = 0;
+                        currentPosition = 0;
 
 
                         while(currentPosition < totalDuration){
                             try{
-                                sleep(1000);
+                                sleep(SLEEP_TIME);
                                 currentPosition = myMediaPlayer.getCurrentPosition();
                                 songSeekbar.setProgress(currentPosition);
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        setSongProgress();
+                                    }
+                                });
                             }catch(InterruptedException e){
                                 e.printStackTrace();
                             }
@@ -519,12 +520,13 @@ public class SongPlayer extends AppCompatActivity {
                 updateSeekBar.start();
 
                 try {
-                    Thread.currentThread().sleep(1000);
+                    Thread.currentThread().sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
                 myMediaPlayer.start();
+                setDuration();
 
                 MainActivity.selectedSong = position;
                 MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
@@ -551,14 +553,21 @@ public class SongPlayer extends AppCompatActivity {
 
                         totalDuration = myMediaPlayer.getDuration();
 
-                        int currentPosition = 0;
+                        currentPosition = 0;
 
 
                         while(currentPosition < totalDuration){
                             try{
-                                sleep(1000);
+                                sleep(SLEEP_TIME);
                                 currentPosition = myMediaPlayer.getCurrentPosition();
                                 songSeekbar.setProgress(currentPosition);
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        setSongProgress();
+                                    }
+                                });
                             }catch(InterruptedException e){
                                 e.printStackTrace();
                             }
@@ -583,12 +592,13 @@ public class SongPlayer extends AppCompatActivity {
                 updateSeekBar.start();
 
                 try {
-                    Thread.currentThread().sleep(1000);
+                    Thread.currentThread().sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
                 myMediaPlayer.start();
+                setDuration();
 
                 MainActivity.selectedSong = position;
                 MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
@@ -606,5 +616,21 @@ public class SongPlayer extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    void setDuration(){
+        songSeekbar.setMax(myMediaPlayer.getDuration());
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(myMediaPlayer.getDuration());
+        long seconds = TimeUnit.MILLISECONDS.toSeconds((myMediaPlayer.getDuration() - minutes*60*1000));
 
+        String time = String.format("%d:%d", minutes,seconds);
+        totalTime.setText(time);
+    }
+
+    void setSongProgress(){
+        long minutes = (currentPosition/1000)/60;
+        long seconds = (currentPosition/1000)%60;
+        String time = String.format("%d:%d",minutes,seconds);
+
+        timePassed.setText(time);
+
+    }
 }
