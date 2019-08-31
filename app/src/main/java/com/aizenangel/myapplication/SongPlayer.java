@@ -671,6 +671,7 @@ public class SongPlayer extends AppCompatActivity {
     private ArrayList<File> mySongs;
     private Thread updateSeekBar;
     public int currentPosition=0;
+    private int totalDuration;
 
     private final int SLEEP_TIME = 100;
 
@@ -704,7 +705,13 @@ public class SongPlayer extends AppCompatActivity {
                while(true){
 
                    currentPosition = 0;
-                   int totalDuration = (myMediaPlayer.getDuration()/1000)*1000;
+                   myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                       @Override
+                       public void onPrepared(MediaPlayer mediaPlayer) {
+                           totalDuration = (myMediaPlayer.getDuration()/1000)*1000-100;
+
+                       }
+                   });
                    while (currentPosition <= totalDuration) {
                        try {
                         sleep(SLEEP_TIME);
@@ -722,7 +729,7 @@ public class SongPlayer extends AppCompatActivity {
                     }
                 }
 
-                System.out.println(currentPosition + " " + totalDuration);
+             //   System.out.println(currentPosition + " " + totalDuration);
 
                 currentPosition = 0;
                 myMediaPlayer.seekTo(0);
