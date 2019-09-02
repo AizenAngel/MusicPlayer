@@ -669,9 +669,11 @@ public class SongPlayer extends AppCompatActivity {
     private String songName;
     private int position;
     private ArrayList<File> mySongs;
+
     private Thread updateSeekBar;
-    public int currentPosition=0;
-    private int totalDuration;
+    public static int currentPosition=0;
+    private static int totalDuration=0;
+    private static boolean OsShouldRun;
 
     private final int SLEEP_TIME = 100;
 
@@ -679,6 +681,7 @@ public class SongPlayer extends AppCompatActivity {
         myMediaPlayer = new MediaPlayer();
     }
 
+//TODO: FIND A WAY TO HAVE A SINGLE THREAD!!!!
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -702,34 +705,32 @@ public class SongPlayer extends AppCompatActivity {
             @Override
             public void run() {
 
-               while(true){
-
+               while(OsShouldRun){
                    currentPosition = 0;
-                   myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                       @Override
-                       public void onPrepared(MediaPlayer mediaPlayer) {
-                           totalDuration = (myMediaPlayer.getDuration()/1000)*1000-100;
 
-                       }
-                   });
                    while (currentPosition <= totalDuration) {
+                       System.out.println("**********************************************"+
+                               currentPosition + " " +
+                               totalDuration);
                        try {
-                        sleep(SLEEP_TIME);
-                        currentPosition = myMediaPlayer.getCurrentPosition();
-                        songSeekbar.setProgress(currentPosition);
+                           sleep(SLEEP_TIME);
+                           currentPosition = myMediaPlayer.getCurrentPosition();
+                           songSeekbar.setProgress(currentPosition);
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setSongProgress();
-                            }
-                        });
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                           runOnUiThread(new Runnable() {
+                               @Override
+                               public void run() {
+                                   setSongProgress();
+                               }
+                           });
+                       } catch (InterruptedException e) {
+                           e.printStackTrace();
+                       }
+                   }
 
-             //   System.out.println(currentPosition + " " + totalDuration);
+                System.out.println("**********************************************"+
+                        currentPosition + " " +
+                totalDuration);
 
                 currentPosition = 0;
                 myMediaPlayer.seekTo(0);
@@ -741,6 +742,8 @@ public class SongPlayer extends AppCompatActivity {
 
         if(myMediaPlayer != null){
             myMediaPlayer.reset();
+            OsShouldRun = false;
+            currentPosition = totalDuration + 100;
         }
 
         Intent i = getIntent();
@@ -774,15 +777,22 @@ public class SongPlayer extends AppCompatActivity {
         //TODO: can i put SongPlayer.this, or getContent
         try {
             myMediaPlayer.setDataSource(getApplicationContext(), u);
-            myMediaPlayer.prepare();
+            myMediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        myMediaPlayer.start();
-        setDuration();
-
-        updateSeekBar.start();
+        myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                myMediaPlayer.start();
+                totalDuration = myMediaPlayer.getDuration();
+                currentPosition = 0;
+                OsShouldRun = true;
+                setDuration();
+                updateSeekBar.start();
+            }
+        });
 
         songSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -837,15 +847,21 @@ public class SongPlayer extends AppCompatActivity {
 
                 try {
                     myMediaPlayer.setDataSource(getApplicationContext(),u);
-                    myMediaPlayer.prepare();
+                    myMediaPlayer.prepareAsync();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                songSeekbar.setMax(myMediaPlayer.getDuration());
 
-                myMediaPlayer.start();
-                setDuration();
+                myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                    @Override
+                    public void onPrepared(MediaPlayer mediaPlayer) {
+                        myMediaPlayer.start();
+                        totalDuration = myMediaPlayer.getDuration();
+                        songSeekbar.setMax(myMediaPlayer.getDuration());
+                        setDuration();
+                    }
+                });
 
                 MainActivity.selectedSong = position;
                 MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
@@ -872,15 +888,21 @@ public class SongPlayer extends AppCompatActivity {
 
                 try {
                     myMediaPlayer.setDataSource(getApplicationContext(),u);
-                    myMediaPlayer.prepare();
+                    myMediaPlayer.prepareAsync();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                songSeekbar.setMax(myMediaPlayer.getDuration());
-
-                myMediaPlayer.start();
-                setDuration();
+                myMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                    @Override
+                    public void onPrepared(MediaPlayer mediaPlayer) {
+                        songSeekbar.setMax(myMediaPlayer.getDuration());
+                        myMediaPlayer.start();
+                        currentPosition = 0;
+                        totalDuration = myMediaPlayer.getDuration();
+                        setDuration();
+                    }
+                });
 
                 MainActivity.selectedSong = position;
                 MainActivity.getViewByPosition(position).setBackgroundColor(Color.RED);
