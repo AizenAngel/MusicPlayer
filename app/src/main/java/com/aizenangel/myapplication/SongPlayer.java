@@ -661,7 +661,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class SongPlayer extends AppCompatActivity {
-    private TextView songLabelName, timePassed, totalTime;
+    private TextView songLabelName;
     private SeekBar songSeekbar;
     private Button btnPrev, btnNext, btnPause;
 
@@ -694,8 +694,7 @@ public class SongPlayer extends AppCompatActivity {
         btnPrev = findViewById(R.id.btn_pre);
         btnNext = findViewById(R.id.btn_next);
         btnPause = findViewById(R.id.btn_pause);
-        timePassed = findViewById(R.id.SeekBarMinutes);
-        totalTime = findViewById(R.id.MediaPlayerDuration);
+
 
         getSupportActionBar().setTitle("Now Playing: ");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -926,15 +925,11 @@ public class SongPlayer extends AppCompatActivity {
         long seconds = TimeUnit.MILLISECONDS.toSeconds((myMediaPlayer.getDuration() - minutes*60*1000));
 
         String time = String.format("%d:%d", minutes,seconds);
-        totalTime.setText(time);
     }
 
     void setSongProgress(){
         long minutes = (currentPosition/1000)/60;
         long seconds = (currentPosition/1000)%60;
         String time = String.format("%d:%d",minutes,seconds);
-
-        timePassed.setText(time);
-
     }
 }
